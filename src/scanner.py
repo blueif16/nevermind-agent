@@ -39,12 +39,17 @@ async def discover_from_hackathon_api(nvm_api_key: str) -> list[dict]:
         print(f"Discovery API returned error: {data.get('error')}")
         return []
 
-    if not isinstance(data, list):
+    # Handle new API format with meta and sellers
+    if isinstance(data, dict) and "sellers" in data:
+        sellers = data["sellers"]
+    elif isinstance(data, list):
+        sellers = data
+    else:
         print(f"Discovery API returned unexpected format: {type(data)}")
         return []
 
     agents = []
-    for seller in data:
+    for seller in sellers:
         # Agent ID fallback: use nvmAgentId or endpointUrl
         agent_id = seller.get("nvmAgentId") or seller.get("endpointUrl", "")
         if not agent_id:
