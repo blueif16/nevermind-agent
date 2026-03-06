@@ -150,4 +150,4 @@ async def run_probe(
 
     # Trigger evaluation callback if provided
     if eval_callback is not None:
-        eval_callback(agent_id, sheet)
+        await eval_callback(agent_id, sheet)
