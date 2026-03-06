@@ -68,7 +68,9 @@ async def run_probe(
 
             # Extract result fields
             status = result.get("status", "error")
-            response_text = result.get("response", "")
+            # Extract response from content array or fallback to response field
+            content = result.get("content", [])
+            response_text = content[0].get("text", "") if content else result.get("response", "")
             credits_used = result.get("credits_used", 0)
 
             # Calculate response bytes
