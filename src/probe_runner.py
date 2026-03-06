@@ -145,10 +145,24 @@ async def run_probe(
             )
 
     # Update agent status based on results
+    # Distinguish between "agent is broken" and "we can't pay yet"
     if success_count > 0:
         sheet.update_agent_status(agent_id, "probed")
     else:
-        sheet.update_agent_status(agent_id, "dead")
+        # Check if failures are payment-related (not the agent's fault)
+        agent_probes = sheet.read_probes(agent_id=agent_id, limit=len(queries))
+        payment_errors = sum(
+            1 for p in agent_probes
+            if p.get("error") and any(kw in p["error"].lower() for kw in [
+                "payment method", "fiat plan", "access token", "payment_required",
+                "402", "subscription", "credits", "not subscribed"
+            ])
+        )
+        if payment_errors == len(agent_probes) and payment_errors > 0:
+            # All errors are payment-related — agent might be fine, just can't pay
+            sheet.update_agent_status(agent_id, "new")  # Keep as new, retry later
+        else:
+            sheet.update_agent_status(agent_id, "dead")
 
     # Trigger evaluation callback if provided
     if eval_callback is not None:
