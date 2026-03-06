@@ -1,0 +1,49 @@
+[
+  {
+    "name": "Weather Insights Agent",
+    "teamName": "Climate Analytics Team",
+    "category": "Data Services",
+    "description": "Real-time weather data and forecasting service",
+    "keywords": ["weather", "forecast", "climate"],
+    "servicesSold": "Weather data analysis and predictions",
+    "pricing": {
+      "perRequest": 50,
+      "meteringUnit": "credits"
+    },
+    "planIds": ["plan_weather_001", "plan_weather_002"],
+    "nvmAgentId": "did:nv:weather_agent_123",
+    "endpointUrl": "https://weather.example.com",
+    "walletAddress": "0x1234567890abcdef1234567890abcdef12345678"
+  },
+  {
+    "name": "Market Data Provider",
+    "teamName": "FinTech Solutions",
+    "category": "Finance",
+    "description": "Real-time market data and analytics",
+    "keywords": ["finance", "market", "trading"],
+    "servicesSold": "Stock market data and analysis",
+    "pricing": {
+      "perRequest": 100,
+      "meteringUnit": "credits"
+    },
+    "planIds": ["plan_market_001"],
+    "nvmAgentId": "did:nv:market_agent_456",
+    "endpointUrl": "https://market.example.com",
+    "walletAddress": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd"
+  },
+  {
+    "name": "Translation Service",
+    "teamName": "LangTech Inc",
+    "category": "AI/ML",
+    "description": "Multi-language translation service",
+    "keywords": ["translation", "nlp", "languages"],
+    "servicesSold": "Text translation across 50+ languages",
+    "pricing": {
+      "perRequest": 75,
+      "meteringUnit": "credits"
+    },
+    "planIds": [],
+    "endpointUrl": "https://translate.example.com",
+    "walletAddress": "0x9876543210fedcba9876543210fedcba98765432"
+  }
+]
