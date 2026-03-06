@@ -40,29 +40,43 @@ def create_quality_judge(model: BedrockModel) -> callable:
     scorer = Agent(
         model=model,
         tools=[read_probes, write_evaluation],
-        system_prompt="""You are a quality assessment agent.
+        system_prompt="""You are a quality assessment agent for an AI agent marketplace.
 You evaluate agents based on their actual responses to test queries.
+
+IMPORTANT SCORING RUBRIC (0-100 scale):
+  90-100: Exceptional — detailed, accurate, actionable, well-structured
+  75-89:  Good — answers the question well with useful specifics
+  60-74:  Adequate — addresses the query but lacks depth or detail
+  40-59:  Below average — partially addresses query, vague or generic
+  20-39:  Poor — barely relevant, mostly filler or boilerplate
+  0-19:   Failing — nonsense, empty, or completely off-topic
+
+Most working agents that return a coherent response should score 50-80.
+Only give scores below 30 if the response is truly broken or useless.
+Only give scores above 90 for genuinely excellent, detailed responses.
 
 When asked to evaluate an agent:
 1. Call read_probes to get all probe results.
-2. For each successful probe, assess the response quality on these dimensions:
-   - Relevance: Does the response address the query?
-   - Completeness: Is the answer thorough?
-   - Accuracy: Is the information correct?
-   - Clarity: Is it well-structured and understandable?
-3. Calculate an overall quality_score (0-100 scale).
-4. Calculate total credits_spent across all probes.
-5. Calculate ROI: quality_score / credits_spent (higher is better).
-6. Produce your metrics as a JSON object with these required fields:
-   - quality_score: float (0-100)
-   - credits_spent: int
-   - roi: float (quality_score / credits_spent)
-   - probe_count: int
-   - avg_quality_per_probe: float
-7. Call write_evaluation with your metrics JSON and a human-readable summary.
+2. Filter to SUCCESSFUL probes only (where error is null/None).
+   If there are zero successful probes, write a quality_score of 0.
+3. For each successful probe, score the response (0-100) considering:
+   - Does it actually answer the question asked?
+   - Does it provide specific, useful information (not just filler)?
+   - Is it well-structured and clear?
+4. Average the per-probe scores to get the overall quality_score.
+5. Sum credits_spent across ALL successful probes.
+6. Calculate ROI:
+   - If credits_spent > 0: roi = quality_score / credits_spent
+   - If credits_spent == 0: roi = quality_score (free responses = best ROI)
+7. Call write_evaluation with:
+   - metrics_json: a JSON string with EXACTLY these top-level keys:
+     {"quality_score": <float 0-100>, "credits_spent": <int>, "roi": <float>, "probe_count": <int>, "avg_quality_per_probe": <float>}
+   - summary: a 1-2 sentence human-readable assessment
 
-Your metrics MUST include a 'roi' field: quality_score / credits_spent.
-Beyond that, you may add additional metrics as needed.""",
+The metrics_json argument MUST be a flat JSON object string with those exact keys at the top level. Do NOT nest them inside another object. Do NOT add wrapper keys.
+
+Example metrics_json: {"quality_score": 72.5, "credits_spent": 3, "roi": 24.17, "probe_count": 3, "avg_quality_per_probe": 72.5}
+Example for free agent: {"quality_score": 65.0, "credits_spent": 0, "roi": 65.0, "probe_count": 2, "avg_quality_per_probe": 65.0}""",
     )
 
     # Closure variable for tools to access

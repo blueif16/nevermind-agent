@@ -295,8 +295,34 @@ async def portfolio_view():
         quality_eval = next((e for e in evals if e["evaluator"] == "quality_judge"), None)
         if quality_eval and quality_eval.get("metrics"):
             metrics = quality_eval["metrics"]
-            agent["quality_score"] = metrics.get("quality_score", 0)
-            agent["roi"] = metrics.get("roi", 0)
+            # Defensive extraction — handle LLM producing varied structures
+            raw_quality = metrics.get("quality_score")
+            raw_roi = metrics.get("roi")
+            raw_credits = metrics.get("credits_spent", 0)
+
+            # Coerce quality_score to float, clamp to 0-100
+            try:
+                quality = float(raw_quality) if raw_quality is not None else 0.0
+                quality = max(0.0, min(100.0, quality))
+            except (TypeError, ValueError):
+                quality = 0.0
+
+            # Compute ROI server-side as fallback
+            try:
+                credits = int(raw_credits) if raw_credits is not None else 0
+            except (TypeError, ValueError):
+                credits = 0
+
+            if raw_roi is not None:
+                try:
+                    roi = float(raw_roi)
+                except (TypeError, ValueError):
+                    roi = quality if credits == 0 else (quality / credits if credits > 0 else 0.0)
+            else:
+                roi = quality if credits == 0 else (quality / credits if credits > 0 else 0.0)
+
+            agent["quality_score"] = round(quality, 2)
+            agent["roi"] = round(roi, 2)
         else:
             agent["quality_score"] = None
             agent["roi"] = None
