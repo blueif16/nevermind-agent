@@ -63,20 +63,14 @@ OUR_PLAN_ID = config.NVM_PLAN_ID or ""
 
 
 def register_if_needed():
-    """Register our agent + DUAL payment plans (USDC + Fiat) with Nevermined.
-
-    Hackathon tip: create both rails so every buyer can pay,
-    whether they have crypto wallets or just credit cards.
-    Stripe test card: 4242 4242 4242 4242, any future expiry, any CVC.
-    """
-    global OUR_AGENT_ID, OUR_PLAN_ID, OUR_PLAN_ID_USDC, OUR_PLAN_ID_FIAT
+    """Register our agent + USDC payment plan with Nevermined."""
+    global OUR_AGENT_ID, OUR_PLAN_ID, OUR_PLAN_ID_USDC
     if OUR_AGENT_ID and OUR_PLAN_ID:
         logger.info(f"Using existing agent: {OUR_AGENT_ID}, plan: {OUR_PLAN_ID}")
         return
 
-    logger.info("Registering agent and DUAL payment plans with Nevermined...")
+    logger.info("Registering agent and USDC plan with Nevermined...")
 
-    # ── 1. Register agent + USDC plan (crypto rail) ─────────
     result = payments.agents.register_agent_and_plan(
         agent_metadata={
             "name": "Portfolio Manager — Agent Rating & Consulting",
@@ -103,32 +97,46 @@ def register_if_needed():
             USDC_ADDRESS,
             payments.account_address,
         ),
-        credits_config=get_fixed_credits_config(100, 1),  # 100 credits, 1 per request
+        credits_config=get_fixed_credits_config(100, 1),
         access_limit="credits",
     )
     OUR_AGENT_ID = result["agentId"]
     OUR_PLAN_ID_USDC = result["planId"]
-    OUR_PLAN_ID = OUR_PLAN_ID_USDC  # Primary plan for @requires_payment
+    OUR_PLAN_ID = OUR_PLAN_ID_USDC
     logger.info(f"Registered USDC plan: agent={OUR_AGENT_ID} plan={OUR_PLAN_ID_USDC}")
 
-    # ── 2. Register fiat/Stripe plan (credit card rail) ─────
+
+def register_fiat_if_needed():
+    """Register fiat/Stripe plan separately — runs even if agent already exists.
+
+    This is decoupled from register_if_needed() so it retries on every startup
+    until it succeeds and the plan ID is stored in env/config.
+    """
+    global OUR_PLAN_ID_FIAT
+    if OUR_PLAN_ID_FIAT:
+        logger.info(f"Using existing fiat plan: {OUR_PLAN_ID_FIAT}")
+        return
+
     try:
+        logger.info("Registering fiat/Stripe plan...")
         fiat_plan = payments.plans.register_credits_plan(
             plan_metadata=PlanMetadata(
                 name="Consulting Credits (Card)",
                 description="1 credit per consulting query — pay with credit card",
             ),
             price_config=get_fiat_price_config(
-                999,  # $9.99 in cents
+                10,  # $0.10 in cents — low for hackathon testing
                 payments.account_address,
             ),
             credits_config=get_fixed_credits_config(100, 1),
         )
         OUR_PLAN_ID_FIAT = fiat_plan.get("planId", "")
-        logger.info(f"Registered fiat plan: {OUR_PLAN_ID_FIAT}")
+        if OUR_PLAN_ID_FIAT:
+            logger.info(f"Registered fiat plan: {OUR_PLAN_ID_FIAT}")
+        else:
+            logger.warning(f"Fiat plan response had no planId: {fiat_plan}")
     except Exception as e:
-        logger.warning(f"Fiat plan registration failed (non-fatal): {e}")
-        # USDC plan still works — fiat is a bonus
+        logger.warning(f"Fiat plan registration failed (non-fatal): {e}", exc_info=True)
 
 
 # ── Evaluation pipeline setup ───────────────────────────────
@@ -161,6 +169,7 @@ class DataRequest(BaseModel):
 @app.on_event("startup")
 async def startup():
     register_if_needed()
+    register_fiat_if_needed()  # Retries separately — won't skip if USDC already registered
 
     # Create consulting agent (needs plan_id from registration)
     global consulting_agent
@@ -173,12 +182,14 @@ async def startup():
     )
 
     # Start scanner background task
+    # FIX: lambda must accept all 5 args the scanner passes:
+    #   probe_callback(agent, sheet, payments, queries=None, eval_callback=None)
     asyncio.create_task(
         scan_loop(
             sheet=sheet,
             payments=payments,
-            probe_callback=lambda a, s, p: run_probe(
-                a, s, p, eval_callback=eval_callback
+            probe_callback=lambda a, s, p, q=None, ec=None: run_probe(
+                a, s, p, queries=q, eval_callback=eval_callback
             ),
             interval=config.SCAN_INTERVAL,
             nvm_api_key=config.NVM_API_KEY,
