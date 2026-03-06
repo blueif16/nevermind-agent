@@ -90,7 +90,11 @@ def purchase_data_impl(
         if response.status_code != 200:
             return _error(f"HTTP {response.status_code}: {response.text[:500]}")
 
-        data = response.json()
+        try:
+            data = response.json()
+        except Exception as json_err:
+            return _error(f"Invalid JSON response: {response.text[:200]}")
+
         return {
             "status": "success",
             "content": [{"text": data.get("response", "")}],
