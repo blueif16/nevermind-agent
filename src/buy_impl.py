@@ -62,9 +62,17 @@ def purchase_data_impl(
         if not access_token:
             return _error("Failed to generate x402 access token.")
 
+        # Smart URL construction: don't append /data if URL already has a path
+        if seller_url.rstrip('/').endswith('/data') or '/data' in seller_url.split('/')[-1:]:
+            endpoint_url = seller_url
+        elif seller_url.count('/') > 2:  # Has path beyond domain
+            endpoint_url = seller_url
+        else:
+            endpoint_url = f"{seller_url}/data"
+
         with httpx.Client(timeout=60.0) as client:
             response = client.post(
-                f"{seller_url}/data",
+                endpoint_url,
                 headers={
                     "Content-Type": "application/json",
                     "payment-signature": access_token,
