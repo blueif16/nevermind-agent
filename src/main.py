@@ -8,6 +8,8 @@ import uvicorn
 
 from src import config
 from src.central_sheet import CentralSheet
+from src.evaluation import pipeline
+from src.evaluators.gate import gate_evaluator
 from src.probe_runner import run_probe
 from src.scanner import scan_loop
 
@@ -24,9 +26,19 @@ payments = Payments(
 )
 
 
+# Evaluation callback for probe runner
+async def eval_callback(agent_id: str, sheet_instance: CentralSheet) -> None:
+    """Trigger evaluation pipeline after probes complete."""
+    await pipeline.run(agent_id, sheet_instance)
+
+
 @app.on_event("startup")
 async def startup_event():
-    """Start background scanner task."""
+    """Start background scanner task and register evaluators."""
+    # Register evaluators
+    pipeline.register("gate", gate_evaluator)
+
+    # Start scanner with eval callback
     asyncio.create_task(
         scan_loop(
             sheet,
@@ -35,6 +47,7 @@ async def startup_event():
             config.SCAN_INTERVAL,
             config.NVM_API_KEY,
             "agents_config.json",
+            eval_callback=eval_callback,
         )
     )
 

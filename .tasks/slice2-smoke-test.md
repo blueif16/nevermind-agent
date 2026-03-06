@@ -1,6 +1,22 @@
 # Slice 2 — Seller + Buyer Smoke Test
-Branch: main | Level: 2 | Type: implement | Status: in_progress
+Branch: main | Level: 2 | Type: implement | Status: ready_for_testing
 Started: 2026-03-05T00:00:00Z
+
+## Summary
+Implementation complete. Ready for manual testing once .env is configured.
+
+**Next steps:**
+1. Copy `.env.example` to `.env`
+2. Set `NVM_API_KEY=sandbox:your-key-here` (get from nevermined.app)
+3. Set `SELLER_URL=http://localhost:3000`
+4. Run: `poetry run smoke-seller` (in one terminal)
+5. Run: `poetry run smoke-buyer` (in another terminal)
+
+**What was built:**
+- FastAPI seller with x402 payment verification (manual verify+settle pattern)
+- Scripted buyer that performs full purchase flow
+- Auto-registration of agent+plan if IDs not configured
+- All imports verified, code ready to run
 
 ## DAG
 ```mermaid
@@ -54,4 +70,5 @@ graph LR
 - Scope: tests/
 - Verify: `poetry run smoke-seller & sleep 3 && poetry run smoke-buyer; kill %1`
 - Needs: T2, T3
-- Status: pending ⏳
+- Status: blocked ⏳
+- Note: Requires .env configuration with NVM_API_KEY before running

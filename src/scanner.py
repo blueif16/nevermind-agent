@@ -185,6 +185,7 @@ async def scan_loop(
     interval: int,
     nvm_api_key: str,
     config_path: str = "agents_config.json",
+    eval_callback: Callable | None = None,
 ) -> None:
     """Main scanner loop.
 
@@ -195,10 +196,11 @@ async def scan_loop(
     Args:
         sheet: CentralSheet instance
         payments: Payments SDK instance
-        probe_callback: async function(agent_info, sheet, payments)
+        probe_callback: async function(agent_info, sheet, payments, queries, eval_callback)
         interval: scan interval in seconds
         nvm_api_key: Nevermined API key for Discovery API
         config_path: path to agents_config.json
+        eval_callback: Optional callback to trigger evaluation after probes
     """
     while True:
         try:
@@ -251,14 +253,18 @@ async def scan_loop(
 
                 print(f"[Scanner] New agent discovered: {agent['agent_id']}")
 
-                # Spawn probe task
-                asyncio.create_task(probe_callback(agent, sheet, payments))
+                # Spawn probe task with eval callback
+                asyncio.create_task(
+                    probe_callback(agent, sheet, payments, None, eval_callback)
+                )
 
             # Re-probe agents with status='reeval'
             reeval_agents = sheet.read_agents(status="reeval")
             for agent in reeval_agents:
                 print(f"[Scanner] Re-probing agent: {agent['agent_id']}")
-                asyncio.create_task(probe_callback(agent, sheet, payments))
+                asyncio.create_task(
+                    probe_callback(agent, sheet, payments, None, eval_callback)
+                )
 
             print(f"[Scanner] Scan complete. Found {len(new_agents)} new agents, {len(reeval_agents)} for re-eval.")
 
