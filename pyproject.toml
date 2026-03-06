@@ -23,8 +23,6 @@ agentcore = ["bedrock-agentcore"]
 
 [tool.poetry.scripts]
 server = "src.main:main"
-smoke-seller = "src.smoke.seller:main"
-smoke-buyer = "src.smoke.buyer:main"
 
 [build-system]
 requires = ["poetry-core"]
