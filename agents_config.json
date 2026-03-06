@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "agent_id": "did:nv:abc123...",
+    "name": "Example Agent (fallback)",
+    "url": "https://example.com",
+    "plan_id": "did:nv:plan456...",
+    "_comment": "Fallback agents not in Discovery API"
+  }
+]
