@@ -8,8 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import uvicorn
+from pathlib import Path
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from pydantic import BaseModel
 from strands.models import BedrockModel
 
@@ -319,6 +320,13 @@ async def portfolio_view():
         "pnl": pnl,
         "evaluators": pipeline.evaluator_names,
     })
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard():
+    """Ops dashboard — your eyes only. Agents never see this."""
+    html_path = Path(__file__).parent / "static" / "dashboard.html"
+    return HTMLResponse(content=html_path.read_text())
 
 
 @app.get("/health")

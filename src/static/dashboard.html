@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Manager — Ops</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: #0a0e17; color: #c8cdd3;
+    font-size: 13px; line-height: 1.5;
+  }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0f172a; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .header {
+    background: linear-gradient(90deg, #0d1220, #111827);
+    border-bottom: 1px solid #1e293b;
+    padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; animation: pulse 2s infinite; }
+  .dot.ok { background: #10b981; box-shadow: 0 0 8px #10b981; }
+  .dot.err { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+  .title { color: #f8fafc; font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+  .subtitle { color: #475569; font-size: 11px; }
+  .content { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .kpi { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 12px 14px; }
+  .kpi-label { color: #64748b; font-size: 10px; font-weight: 600; letter-spacing: 1.2px; margin-bottom: 4px; }
+  .kpi-value { font-size: 22px; font-weight: 700; }
+  .kpi-sub { color: #475569; font-size: 10px; }
+  .panel { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 16px; }
+  .panel-title { color: #64748b; font-size: 10px; font-weight: 600; letter-spacing: 1.2px; margin-bottom: 10px; }
+  .status-bar { display: flex; gap: 4px; height: 28px; border-radius: 4px; overflow: hidden; }
+  .status-seg { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; transition: width 0.5s ease; min-width: 24px; }
+  .legend { display: flex; gap: 16px; margin-top: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 4px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+  .legend-text { color: #64748b; font-size: 10px; text-transform: uppercase; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+  .rec-card { border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid #1e293b; background: #0f172a; }
+  .rec-card.top { background: linear-gradient(90deg, #1e1b4b, #111827); border-color: #4338ca; }
+  .rec-header { display: flex; justify-content: space-between; align-items: center; }
+  .rec-name { color: #e2e8f0; font-weight: 600; font-size: 12px; }
+  .rec-roi { background: #312e81; color: #a78bfa; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .rec-meta { display: flex; gap: 12px; margin-top: 4px; color: #64748b; font-size: 11px; }
+  .log-area { flex: 1; overflow-y: auto; max-height: 220px; font-size: 11px; }
+  .log-entry { padding: 2px 0; border-bottom: 1px solid #0f172a; }
+  .log-ts { color: #475569; }
+  .log-ok { color: #6ee7b7; }
+  .log-err { color: #f87171; }
+  .log-info { color: #94a3b8; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { text-align: left; padding: 6px 8px; color: #64748b; font-weight: 600; font-size: 10px; letter-spacing: 0.8px; text-transform: uppercase; border-bottom: 1px solid #1e293b; }
+  td { padding: 6px 8px; }
+  tr.data-row { border-bottom: 1px solid #0f172a; transition: background 0.15s; }
+  tr.data-row:hover { background: #1e293b; }
+  .agent-name { color: #e2e8f0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; display: block; }
+  .agent-url { color: #475569; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; display: block; }
+  .pill { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-block; }
+  .pill-live { background: #065f46; color: #34d399; }
+  .pill-off { background: #7f1d1d; color: #fca5a5; }
+  .rails { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .rail-item { display: flex; align-items: center; gap: 8px; }
+  .empty { color: #475569; font-style: italic; padding: 20px 0; text-align: center; }
+  .footer { color: #334155; font-size: 10px; text-align: center; padding: 8px 0; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="dot ok" id="statusDot"></div>
+    <span class="title">PORTFOLIO MANAGER OPS</span>
+    <span class="subtitle" id="pollStatus">connecting...</span>
+  </div>
+  <div>
+    <span class="subtitle" id="serverInfo"></span>
+  </div>
+</div>
+
+<div class="content">
+  <div class="kpi-grid" id="kpis"></div>
+
+  <div class="panel" id="railsPanel" style="display:none">
+    <div class="panel-title">PAYMENT RAILS</div>
+    <div class="rails" id="railsContent"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">AGENT STATUS DISTRIBUTION</div>
+    <div class="status-bar" id="statusBar"></div>
+    <div class="legend" id="statusLegend"></div>
+  </div>
+
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title" style="color:#a78bfa">TOP RECOMMENDED (BY ROI)</div>
+      <div id="recommended"></div>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column">
+      <div class="panel-title">ACTIVITY LOG</div>
+      <div class="log-area" id="logArea"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="overflow:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="panel-title" id="tableTitle">FULL PORTFOLIO</div>
+      <div id="evalNames" style="color:#475569;font-size:10px"></div>
+    </div>
+    <div id="portfolioTable"></div>
+  </div>
+
+  <div class="footer" id="footer"></div>
+</div>
+
+<script>
+const POLL = 15000;
+const SC = { new:'#6b7280', probed:'#f59e0b', evaluated:'#10b981', dead:'#ef4444' };
+let logs = [];
+
+function fmt(n) { return n==null?'—':typeof n==='number'?n.toLocaleString():String(n); }
+function fmtR(n) { return n==null?'—':n.toFixed(1); }
+function fmtS(n) { return n==null?'—':n.toFixed(0); }
+function ago(ts) {
+  if (!ts) return 'never';
+  const d = Date.now()-new Date(ts).getTime();
+  if (d<60000) return Math.floor(d/1000)+'s ago';
+  if (d<3600000) return Math.floor(d/60000)+'m ago';
+  return Math.floor(d/3600000)+'h ago';
+}
+
+function addLog(msg, type) {
+  logs.push({ts:new Date().toISOString(), msg, type});
+  if (logs.length>80) logs=logs.slice(-80);
+  const el=document.getElementById('logArea');
+  el.innerHTML=logs.map(l=>`<div class="log-entry"><span class="log-ts">${new Date(l.ts).toLocaleTimeString()}</span> <span class="log-${l.type}">${l.msg}</span></div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+async function poll() {
+  const t0=Date.now();
+  try {
+    const [h,p,pr] = await Promise.all([
+      fetch('/health').then(r=>r.json()),
+      fetch('/portfolio').then(r=>r.json()),
+      fetch('/pricing').then(r=>r.json()),
+    ]);
+    const ms=Date.now()-t0;
+    document.getElementById('statusDot').className='dot ok';
+    document.getElementById('pollStatus').textContent=`polled ${ms}ms ago`;
+    document.getElementById('serverInfo').textContent=window.location.origin;
+    addLog(`Health OK — ${h.agents_tracked} agents, ${h.total_probes} probes [${ms}ms]`,'ok');
+    renderKPIs(h,p); renderRails(pr); renderStatus(p.portfolio||[]);
+    renderRec(p.recommended_agents||[]); renderTable(p.portfolio||[],p.evaluators||[]);
+  } catch(e) {
+    document.getElementById('statusDot').className='dot err';
+    addLog('Poll failed: '+e.message,'err');
+  }
+}
+
+function renderKPIs(h,p) {
+  const pnl=h.pnl||p.pnl||{}, m=(pnl.revenue||0)-(pnl.spent||0), rec=(p.recommended_agents||[]).length;
+  const d=[
+    {l:'AGENTS',v:fmt(h.agents_tracked),c:'#60a5fa'},
+    {l:'EVALUATED',v:fmt(h.agents_evaluated),c:'#10b981'},
+    {l:'PROBES',v:fmt(h.total_probes),c:'#f59e0b'},
+    {l:'REVENUE',v:fmt(pnl.revenue||0),s:'credits in',c:'#34d399'},
+    {l:'SPENT',v:fmt(pnl.spent||0),s:'credits out',c:'#f87171'},
+    {l:'MARGIN',v:fmt(m),c:m>=0?'#10b981':'#ef4444'},
+    {l:'RECOMMENDED',v:fmt(rec),c:'#a78bfa'},
+  ];
+  document.getElementById('kpis').innerHTML=d.map(k=>`<div class="kpi"><div class="kpi-label">${k.l}</div><div class="kpi-value" style="color:${k.c}">${k.v}</div>${k.s?`<div class="kpi-sub">${k.s}</div>`:''}</div>`).join('');
+}
+
+function renderRails(pr) {
+  if(!pr)return;
+  document.getElementById('railsPanel').style.display='block';
+  const pl=pr.plans||{};
+  let h='';
+  h+=`<div class="rail-item"><span class="pill ${pl.usdc?'pill-live':'pill-off'}">${pl.usdc?'LIVE':'OFF'}</span><span style="color:#94a3b8">USDC</span><span style="color:#475569;font-size:11px">${pl.usdc?(pl.usdc.substring(0,16)+'...'):'not registered'}</span></div>`;
+  h+=`<div class="rail-item"><span class="pill ${pl.fiat?'pill-live':'pill-off'}">${pl.fiat?'LIVE':'OFF'}</span><span style="color:#94a3b8">Card/Fiat</span><span style="color:#475569;font-size:11px">${pl.fiat?(pl.fiat.substring(0,16)+'...'):'not registered'}</span></div>`;
+  h+=`<div style="color:#475569;font-size:11px;margin-left:auto">Agent: ${pr.agentId?(pr.agentId.substring(0,20)+'...'):'—'}</div>`;
+  document.getElementById('railsContent').innerHTML=h;
+}
+
+function renderStatus(agents) {
+  const c={};
+  agents.forEach(a=>{c[a.status]=(c[a.status]||0)+1;});
+  const t=agents.length||1;
+  document.getElementById('statusBar').innerHTML=Object.entries(SC).map(([s,col])=>{
+    const n=c[s]||0; const pct=(n/t)*100;
+    return n?`<div class="status-seg" style="background:${col};width:${pct}%">${n}</div>`:'';
+  }).join('');
+  document.getElementById('statusLegend').innerHTML=Object.entries(SC).map(([s,col])=>
+    `<div class="legend-item"><div class="legend-dot" style="background:${col}"></div><span class="legend-text">${s} (${c[s]||0})</span></div>`
+  ).join('');
+}
+
+function renderRec(rec) {
+  const el=document.getElementById('recommended');
+  if(!rec.length){el.innerHTML='<div class="empty">No agents evaluated yet — scanner probing...</div>';return;}
+  el.innerHTML=rec.map((a,i)=>`<div class="rec-card ${i===0?'top':''}">
+    <div class="rec-header"><span class="rec-name">${i===0?'🏆 ':''}${a.name||a.agent_id?.substring(0,20)}</span><span class="rec-roi">ROI ${fmtR(a.roi)}</span></div>
+    <div class="rec-meta"><span>Quality: ${fmtS(a.quality_score)}/100</span><span>Cost: ${fmt(a.avg_cost)} cr</span><span>Probes: ${fmt(a.probe_count)}</span></div>
+  </div>`).join('');
+}
+
+function renderTable(agents, evals) {
+  document.getElementById('tableTitle').textContent=`FULL PORTFOLIO (${agents.length} agents)`;
+  document.getElementById('evalNames').textContent='Evaluators: '+(evals.join(', ')||'—');
+  if(!agents.length){document.getElementById('portfolioTable').innerHTML='<div class="empty">Portfolio empty — scanner discovering agents...</div>';return;}
+  let h='<table><thead><tr>';
+  ['Status','Agent','ROI','Quality','Probes','Avg Cost','Latency','Evals','Last Probe'].forEach(c=>h+=`<th>${c}</th>`);
+  h+='</tr></thead><tbody>';
+  agents.forEach(a=>{
+    const sc=SC[a.status]||'#374151';
+    h+=`<tr class="data-row">
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${sc};margin-right:6px"></span><span style="color:${sc};font-size:10px;font-weight:600;text-transform:uppercase">${a.status}</span></td>
+      <td><span class="agent-name">${a.name||'unnamed'}</span><span class="agent-url">${a.url||a.agent_id?.substring(0,30)||''}</span></td>
+      <td style="color:${a.roi!=null?'#a78bfa':'#374151'};font-weight:700">${fmtR(a.roi)}</td>
+      <td style="color:${a.quality_score!=null?'#60a5fa':'#374151'}">${fmtS(a.quality_score)}</td>
+      <td>${fmt(a.probe_count)}</td>
+      <td>${a.avg_cost!=null?a.avg_cost.toFixed(1):'—'}</td>
+      <td>${a.avg_latency!=null?a.avg_latency.toFixed(0)+'ms':'—'}</td>
+      <td>${fmt(a.eval_count)}</td>
+      <td style="color:#475569">${ago(a.last_probe)}</td>
+    </tr>`;
+  });
+  h+='</tbody></table>';
+  document.getElementById('portfolioTable').innerHTML=h;
+}
+
+document.getElementById('footer').textContent='Portfolio Manager Ops — Polls every '+(POLL/1000)+'s | Agents see POST /data (x402). This page is your eyes only.';
+poll(); setInterval(poll, POLL);
+</script>
+</body>
+</html>
