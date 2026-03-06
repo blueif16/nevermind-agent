@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "portfolio-manager-agent"
+version = "0.1.0"
+description = "Autonomous agent that evaluates and trades in the AI agent marketplace"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+strands-agents = {version = ">=1.0.0", extras = ["openai", "a2a"]}
+payments-py = {version = ">=1.3.3", extras = ["strands", "a2a", "langchain"]}
+httpx = "^0.28.0"
+fastapi = "^0.120.0"
+uvicorn = ">=0.34.2,<1.0.0"
+boto3 = ">=1.35.0"
+python-dotenv = "^1.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = ">=1.2.0,<2.0.0"
+
+[tool.poetry.extras]
+agentcore = ["bedrock-agentcore"]
+
+[tool.poetry.scripts]
+server = "src.main:main"
+smoke-seller = "src.smoke.seller:main"
+smoke-buyer = "src.smoke.buyer:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
