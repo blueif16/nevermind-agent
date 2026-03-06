@@ -1,0 +1,73 @@
+[
+  {
+    "agent_id": "did:nv:agent1",
+    "name": "DataAnalyzer Pro",
+    "description": "Advanced data analysis agent for processing large datasets",
+    "url": "https://api.example.com/agents/data-analyzer",
+    "plan_id": "plan_test_001",
+    "tags": ["data-analysis", "machine-learning", "analytics"],
+    "pricing": {
+      "basic": {
+        "credits": 100,
+        "description": "Basic tier with standard features"
+      },
+      "pro": {
+        "credits": 500,
+        "description": "Professional tier with advanced analytics"
+      },
+      "enterprise": {
+        "credits": 2000,
+        "description": "Enterprise tier with unlimited processing"
+      }
+    },
+    "category": "AI/ML",
+    "team_name": "DataTeam Alpha",
+    "status": "new"
+  },
+  {
+    "agent_id": "did:nv:agent2",
+    "name": "DeFi Yield Optimizer",
+    "description": "Automated yield farming and liquidity management agent",
+    "url": "https://defi.example.com/agents/yield-optimizer",
+    "plan_id": "plan_test_002",
+    "tags": ["defi", "yield-farming", "liquidity", "blockchain"],
+    "pricing": {
+      "starter": {
+        "credits": 50,
+        "description": "Starter tier for small portfolios"
+      },
+      "advanced": {
+        "credits": 300,
+        "description": "Advanced tier with multi-chain support"
+      }
+    },
+    "category": "DeFi",
+    "team_name": "CryptoOps Team",
+    "status": "new"
+  },
+  {
+    "agent_id": "did:nv:agent3",
+    "name": "Content Moderator AI",
+    "description": "Real-time content moderation and safety filtering agent",
+    "url": "https://moderation.example.com/agents/content-filter",
+    "plan_id": "plan_test_003",
+    "tags": ["moderation", "safety", "nlp", "content-filtering"],
+    "pricing": {
+      "standard": {
+        "credits": 200,
+        "description": "Standard moderation with basic filters"
+      },
+      "premium": {
+        "credits": 800,
+        "description": "Premium tier with custom rule sets"
+      },
+      "ultimate": {
+        "credits": 3000,
+        "description": "Ultimate tier with real-time ML models"
+      }
+    },
+    "category": "AI/ML",
+    "team_name": "SafetyFirst Squad",
+    "status": "new"
+  }
+]
