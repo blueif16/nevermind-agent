@@ -65,6 +65,7 @@ def register_if_needed():
         },
         agent_api={
             "endpoints": [{"POST": f"{OUR_HOST}/data"}],
+            "agentDefinitionUrl": f"{OUR_HOST}/openapi.json",
         },
         plan_metadata={
             "name": "Smoke Test Plan",

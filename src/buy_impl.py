@@ -128,6 +128,7 @@ def discover_pricing_impl(seller_url: str) -> dict[str, Any]:
         return {
             "status": "success",
             "plan_id": data.get("planId", ""),
+            "agent_id": data.get("agentId", ""),
             "tiers": data.get("tiers", {}),
         }
     except Exception:

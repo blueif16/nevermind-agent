@@ -47,8 +47,8 @@ def main():
         logger.error("❌ Failed to discover pricing")
         return
 
-    plan_id = pricing_data.get("planId", "")
-    agent_id = pricing_data.get("agentId", "")
+    plan_id = pricing_data.get("plan_id", "")
+    agent_id = pricing_data.get("agent_id", "")
     tiers = pricing_data.get("tiers", {})
 
     logger.info(f"✅ Discovered plan: {plan_id}")
