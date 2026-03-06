@@ -28,6 +28,7 @@ from src.scanner import scan_loop
 from src.probe_runner import run_probe
 from src.evaluation import pipeline
 from src.evaluators.gate import gate_evaluator
+from src.evaluators.quality_judge import create_quality_judge
 from src.consulting_agent import create_consulting_agent
 
 logging.basicConfig(level=logging.INFO)
@@ -133,6 +134,7 @@ def register_if_needed():
 # ── Evaluation pipeline setup ───────────────────────────────
 
 pipeline.register("gate", gate_evaluator)
+pipeline.register("quality_judge", create_quality_judge(model))
 
 
 async def eval_callback(agent_id: str, sheet_instance: CentralSheet):
@@ -268,10 +270,42 @@ async def pricing():
 
 @app.get("/portfolio")
 async def portfolio_view():
-    """Public dashboard — ranked agents, evaluation data, P&L."""
+    """Public dashboard — ranked agents with quality scores, ROI, and recommendations."""
+    portfolio = sheet.read_portfolio()
+    pnl = sheet.get_pnl()
+
+    # Enrich each agent with quality scores and ROI
+    for agent in portfolio:
+        evals = sheet.read_evaluations(agent_id=agent["agent_id"])
+        agent["evaluators"] = [e["evaluator"] for e in evals]
+
+        # Extract quality_judge metrics if available
+        quality_eval = next((e for e in evals if e["evaluator"] == "quality_judge"), None)
+        if quality_eval and quality_eval.get("metrics"):
+            metrics = quality_eval["metrics"]
+            agent["quality_score"] = metrics.get("quality_score", 0)
+            agent["roi"] = metrics.get("roi", 0)
+        else:
+            agent["quality_score"] = None
+            agent["roi"] = None
+
+    # Sort by ROI (descending), agents without ROI go to end
+    portfolio_sorted = sorted(
+        portfolio,
+        key=lambda x: (x["roi"] is not None, x["roi"] or 0),
+        reverse=True
+    )
+
+    # Top 3 agents by ROI (with quality scores)
+    recommended = [
+        a for a in portfolio_sorted[:3]
+        if a["roi"] is not None and a["roi"] > 0
+    ]
+
     return JSONResponse(content={
-        "portfolio": sheet.read_portfolio(),
-        "pnl": sheet.get_pnl(),
+        "portfolio": portfolio_sorted,
+        "recommended_agents": recommended,
+        "pnl": pnl,
         "evaluators": pipeline.evaluator_names,
     })
 
